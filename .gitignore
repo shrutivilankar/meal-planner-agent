@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Test cache
+.pytest_cache/
+
+# Local vector database artifacts
+chain_recipes_db/
+myRecipesLanceDb/
+myRecipiesLanceDb/
+*.lance/
+
+misc/
+
+# Virtual environments
+.venv
+
+.env
