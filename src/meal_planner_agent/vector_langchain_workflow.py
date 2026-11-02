@@ -8,8 +8,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 
-# from sentence_transformers import SentenceTransformer
-# from lancedb.pydantic import LanceModel, Vector
 import lancedb
 import pandas
 from openai import OpenAI
@@ -61,7 +59,7 @@ def maintainRecipes(file_path: Path):
             "question":RunnablePassthrough()
         }
         | prompt
-        | RunnableLambda(call_llm_reply_to_user)
+        | RunnableLambda(call_llm_for_reply_to_user)
         | StrOutputParser()
     )
 
@@ -90,18 +88,7 @@ def maintainRecipes(file_path: Path):
     
 
 
-
-
-
-
-
-
-
-
-
-
-
-def call_llm_reply_to_user(formatted_prompt):
+def call_llm_for_reply_to_user(formatted_prompt):
   
 
     client = OpenAI(
