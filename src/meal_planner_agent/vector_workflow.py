@@ -42,7 +42,6 @@ def maintainRecipes(file_path: Path):
     
 
 def find_answer_to_user_query(query_text: String):
-
     
     db = lancedb.connect("./myRecipesLanceDb")
     table1 = db.open_table("recipes_table")

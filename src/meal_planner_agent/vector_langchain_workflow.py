@@ -7,6 +7,7 @@ from langchain_community.vectorstores import LanceDB
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langsmith import wrappers
 
 import lancedb
 import pandas
@@ -18,13 +19,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-def maintainRecipes(file_path: Path):
-    print("inside maintainRecipes")
+def maintain_recipes(file_path: Path):
+    print("inside maintain_recipes")
 
     with open(file_path, "r", encoding="utf-8") as f:
         content= f.read()
     chunks = content.splitlines()
-    print(f"chunks: {chunks}")
+    #print(f"chunks: {chunks}")
 
     documentlist = [Document(page_content=text, metadata={"source": "diet recipes"}) for text in chunks]
 
@@ -39,24 +40,28 @@ def maintainRecipes(file_path: Path):
 
     )
     print(f"Successfully created table recipes and ingested vectors.")
-
-    query = "what is portion size for Joy?"
-
-    #search_results = vector_store.similarity_search(query, k=2)
     
 
+
+def chat_with_retriever(inputs: dict):
+    #query = "what is portion size for Joy?"
+    #search_results = vector_store.similarity_search(query, k=2)
+    query = inputs["query"]
     prompt = ChatPromptTemplate([
         ("system", "You are a helpful kitchen assistant. Answer the user's question using ONLY the provided context.If the context doesn't contain the answer, say 'I cannot find that in the recipe book.'"),
-        ("human", "Question: {question}")
+        ("human", "Question: {query}")
     ]
     )
-    vector_retriever = vector_store.as_retriever(search_kwargs={"k":1})
 
+    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+
+    vector_store = LanceDB(uri="./chain_recipes_db", embedding=embeddings,table_name="recipes")
+    vector_retriever = vector_store.as_retriever(search_kwargs={"k":1})
 
     rag_chain = (
         {
             "context": vector_retriever,
-            "question":RunnablePassthrough()
+            "query":RunnablePassthrough()
         }
         | prompt
         | RunnableLambda(call_llm_for_reply_to_user)
@@ -67,6 +72,7 @@ def maintainRecipes(file_path: Path):
     answer = rag_chain.invoke(query)
 
     print(f"Result:\n{answer}")
+    return answer
 
     # compressor_flashrank = FlashrankRerank(model="ms-marco-MiniLM-L-12-v2")
 
@@ -96,7 +102,8 @@ def call_llm_for_reply_to_user(formatted_prompt):
         base_url= "https://openrouter.ai/api/v1"
     )
 
-    result = client.chat.completions.create(
+    langsmith_wrapper_client = wrappers.wrap_openai(client)
+    result = langsmith_wrapper_client.chat.completions.create(
         model = os.getenv("MODEL"),
         messages = [{ "role":"user", "content": formatted_prompt.to_string()}],
         max_completion_tokens = 2000,

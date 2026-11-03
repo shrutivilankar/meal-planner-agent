@@ -19,9 +19,7 @@ async def generate_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     #return await update.message.reply_text(formatted_recipe)
         # Send the result back to the user
     await update.message.reply_document(document=file)
-
-    maintainRecipes(file)
-
+    
     return 
      
 
